@@ -63,3 +63,56 @@ def test_unknown_id_exits_2(tmp_path):
     result = runner.invoke(app, ["impact", "REQ-404", "--root", str(project)])
     assert result.exit_code == 2
     assert "unknown artifact id" in _all_output(result)
+
+
+def test_detect_reports_severities(tmp_path):
+    project = _copy_project(tmp_path)
+    result = runner.invoke(app, ["detect", "--root", str(project)])
+    assert result.exit_code == 0, _all_output(result)
+    assert "[CRITICAL D1]" in result.output
+    assert "[HIGH D5]" in result.output
+
+
+def test_detect_json(tmp_path):
+    project = _copy_project(tmp_path)
+    result = runner.invoke(app, ["detect", "--root", str(project), "--json"])
+    assert result.exit_code == 0, _all_output(result)
+    import json
+
+    payload = json.loads(result.output)
+    assert payload["summary"]["total"] == 2
+    assert payload["summary"]["counts"]["CRITICAL"] == 1
+    assert payload["summary"]["counts"]["HIGH"] == 1
+
+
+def test_verify_pass_then_fail(tmp_path):
+    project = _copy_project(tmp_path)
+    (project / "assertions.yaml").write_text(
+        "fail_to_pass: []\n"
+        "pass_to_pass:\n"
+        "  - checker: file_exists\n"
+        "    file: artifacts/spec/REQ-001.md\n",
+        encoding="utf-8",
+    )
+    ok = runner.invoke(app, ["verify", "--root", str(project)])
+    assert ok.exit_code == 0, _all_output(ok)
+    assert "verify: PASS" in ok.output
+
+    (project / "assertions.yaml").write_text(
+        "fail_to_pass:\n"
+        "  - checker: file_contains\n"
+        "    file: artifacts/spec/REQ-001.md\n"
+        "    text: no-such-text-here\n"
+        "pass_to_pass: []\n",
+        encoding="utf-8",
+    )
+    bad = runner.invoke(app, ["verify", "--root", str(project)])
+    assert bad.exit_code == 1
+    assert "FAIL" in _all_output(bad)
+
+
+def test_verify_missing_config_exit_2(tmp_path):
+    project = _copy_project(tmp_path)
+    result = runner.invoke(app, ["verify", "--root", str(project)])
+    assert result.exit_code == 2
+    assert "assertions.yaml not found" in _all_output(result)
