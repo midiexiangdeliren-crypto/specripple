@@ -5,7 +5,7 @@ description: Use after propagating or aligning artifact changes, or when asked t
 
 # Detecting Conflicts (LLM layer)
 
-Run this checklist AFTER `align detect` (the zero-token rule layer). The rule layer owns structure; you own semantics. Grade every finding CRITICAL / HIGH / MEDIUM / LOW exactly like detect does, and cite entry ids plus quoted text as evidence.
+Run this checklist AFTER `specripple detect` (the zero-token rule layer). The rule layer owns structure; you own semantics. Grade every finding CRITICAL / HIGH / MEDIUM / LOW exactly like detect does, and cite entry ids plus quoted text as evidence.
 
 ## Six checks (Spec Kit /analyze categories, run incrementally after each propagation)
 
@@ -19,6 +19,6 @@ Run this checklist AFTER `align detect` (the zero-token rule layer). The rule la
 ## Output discipline
 
 - For each finding report: category, severity, affected entry ids, one-sentence evidence, suggested fix.
-- Auto-fixable findings: fix them directly, then re-run `align detect` to confirm the structure is still legal.
+- Auto-fixable findings: fix them directly, then re-run `specripple detect` to confirm the structure is still legal.
 - Needs-user findings: hand them to resolving-conflicts, one question at a time.
-- Dual control: never report an LLM-layer finding about structure without `align detect` agreeing the surrounding structure is parseable and legal - model self-reports must pass the rule layer, never replace it.
+- Dual control: never report an LLM-layer finding about structure without `specripple detect` agreeing the surrounding structure is parseable and legal - model self-reports must pass the rule layer, never replace it.

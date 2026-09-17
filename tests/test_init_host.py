@@ -1,4 +1,4 @@
-from align_kit.init_host import (
+from specripple.init_host import (
     CLAUDE_COMMAND,
     agents_block,
     managed_paths,
@@ -13,22 +13,22 @@ SKILL_NAMES = ("aligning-changes", "detecting-conflicts", "resolving-conflicts")
 
 def test_agents_block_has_version_stamp():
     block = agents_block()
-    assert block.startswith("<!-- align-kit:begin v")
-    assert block.rstrip().endswith("<!-- align-kit:end -->")
+    assert block.startswith("<!-- specripple:begin v")
+    assert block.rstrip().endswith("<!-- specripple:end -->")
     assert "aligning-changes" in block
 
 
 def test_upsert_is_idempotent():
-    from align_kit.init_host import upsert_agents_block
+    from specripple.init_host import upsert_agents_block
 
     once = agents_block()
     assert upsert_agents_block(once) == once
 
 
 def test_upsert_replaces_old_version_block():
-    from align_kit.init_host import upsert_agents_block
+    from specripple.init_host import upsert_agents_block
 
-    old = "<!-- align-kit:begin v0.0.9 -->\nstale content\n<!-- align-kit:end -->\n"
+    old = "<!-- specripple:begin v0.0.9 -->\nstale content\n<!-- specripple:end -->\n"
     merged = upsert_agents_block(old)
     assert "v0.0.9" not in merged
     assert "stale content" not in merged
@@ -36,7 +36,7 @@ def test_upsert_replaces_old_version_block():
 
 
 def test_upsert_preserves_existing_content():
-    from align_kit.init_host import upsert_agents_block
+    from specripple.init_host import upsert_agents_block
 
     existing = "# My project\n\nCustom notes here.\n"
     merged = upsert_agents_block(existing)
@@ -45,7 +45,7 @@ def test_upsert_preserves_existing_content():
 
 
 def test_strip_removes_block_and_keeps_rest():
-    from align_kit.init_host import upsert_agents_block
+    from specripple.init_host import upsert_agents_block
 
     existing = "# My project\n\nCustom notes here.\n"
     merged = upsert_agents_block(existing)
@@ -107,19 +107,19 @@ def test_claude_install_adds_shells_and_command(tmp_path):
     for name in SKILL_NAMES:
         shell = tmp_path / ".claude" / "skills" / name / "SKILL.md"
         assert shell.read_text(encoding="utf-8") == thin_shell(skill_source_text(name), name)
-    command = tmp_path / ".claude" / "commands" / "align.md"
+    command = tmp_path / ".claude" / "commands" / "specripple.md"
     assert command.read_text(encoding="utf-8") == CLAUDE_COMMAND
 
 
 def test_claude_remove_cleans_managed_files(tmp_path):
     run_init(tmp_path, "claude")
     actions = run_init(tmp_path, "claude", remove=True)
-    assert any("strip align-kit block" in a for a in actions)
+    assert any("strip specripple block" in a for a in actions)
     assert not (tmp_path / "AGENTS.md").read_text(encoding="utf-8").strip()
     for name in SKILL_NAMES:
         assert not (tmp_path / ".agents" / "skills" / name / "SKILL.md").exists()
         assert not (tmp_path / ".claude" / "skills" / name / "SKILL.md").exists()
-    assert not (tmp_path / ".claude" / "commands" / "align.md").exists()
+    assert not (tmp_path / ".claude" / "commands" / "specripple.md").exists()
 
 
 def test_remove_skips_user_modified_files(tmp_path):

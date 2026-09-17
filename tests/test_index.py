@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from align_kit.index_build import build_index, write_index
-from align_kit.repo import load_entries
+from specripple.index_build import build_index, write_index
+from specripple.repo import load_entries
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mini"
 

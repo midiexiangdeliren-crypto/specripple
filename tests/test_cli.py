@@ -4,7 +4,7 @@ import shutil
 
 from typer.testing import CliRunner
 
-from align_kit.cli import app
+from specripple.cli import app
 
 runner = CliRunner()
 FIXTURES = Path(__file__).parent / "fixtures" / "mini"

@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from align_kit.demo import DEMO_DIR, run_demo
+from specripple.demo import DEMO_DIR, run_demo
 
 
 def test_demo_full_run(tmp_path, capsys):

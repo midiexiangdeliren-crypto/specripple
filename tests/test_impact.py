@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from align_kit.impact import compute_impact
-from align_kit.repo import load_entries
+from specripple.impact import compute_impact
+from specripple.repo import load_entries
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mini"
 

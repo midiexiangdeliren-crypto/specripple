@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from align_kit.repo import load_entries, parse_entry_file
+from specripple.repo import load_entries, parse_entry_file
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mini"
 

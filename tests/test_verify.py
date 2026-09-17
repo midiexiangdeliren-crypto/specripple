@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from align_kit.verify import run_verify
+from specripple.verify import run_verify
 
 
 def _write(root: Path, rel: str, content: str) -> None:

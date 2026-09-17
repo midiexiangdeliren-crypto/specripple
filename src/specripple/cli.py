@@ -1,4 +1,4 @@
-"""align-kit command line interface."""
+"""specripple command line interface."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from .verify import run_verify
 
 app = typer.Typer(
     add_completion=False,
-    help="align-kit: change-driven multi-artifact alignment (deterministic core).",
+    help="specripple: change-driven multi-artifact alignment (deterministic core).",
 )
 
 
@@ -154,10 +154,10 @@ def demo() -> None:
 def init(
     host: str = typer.Option(..., "--host", help="Target host: codex or claude."),
     root: Path = typer.Option(Path("."), "--root", help="Project root to set up."),
-    remove: bool = typer.Option(False, "--remove", help="Remove align-kit managed files."),
+    remove: bool = typer.Option(False, "--remove", help="Remove specripple managed files."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print actions without writing."),
 ) -> None:
-    """Install (or remove) align-kit host integration files."""
+    """Install (or remove) specripple host integration files."""
     try:
         actions = run_init(root, host, remove=remove, dry_run=dry_run)
     except ValueError as exc:
@@ -176,7 +176,7 @@ def import_speckit_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Project root to write artifacts/ into."),
     json_out: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
 ) -> None:
-    """Convert Spec Kit artifacts into the align-kit entry repository."""
+    """Convert Spec Kit artifacts into the specripple entry repository."""
     try:
         result = import_speckit(src, root)
     except ValueError as exc:

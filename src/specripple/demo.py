@@ -19,7 +19,7 @@ DEMO_DIR = Path(__file__).parent / "demo_project"
 
 def prepare_demo_temp() -> Path:
     """Copy the bundled demo project into a fresh temp directory."""
-    target = Path(tempfile.mkdtemp(prefix="align-demo-")) / "demo-project"
+    target = Path(tempfile.mkdtemp(prefix="specripple-demo-")) / "demo-project"
     shutil.copytree(DEMO_DIR, target)
     return target
 

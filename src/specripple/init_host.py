@@ -10,36 +10,36 @@ from . import __version__
 SKILLS_DIR = Path(__file__).parent / "skills"
 SKILL_NAMES = ("aligning-changes", "detecting-conflicts", "resolving-conflicts")
 HOSTS = ("codex", "claude")
-BLOCK_END = "<!-- align-kit:end -->"
+BLOCK_END = "<!-- specripple:end -->"
 
 AGENTS_BODY = """\
-## Alignment layer (align-kit)
+## Alignment layer (specripple)
 
 `artifacts/` holds the entry repository: one markdown file per entry (REQ/TASK/PLAN/CON/RAT), YAML frontmatter, schema v0.
 
 - When the user changes a requirement or asks to sync/align artifacts, follow the `aligning-changes` skill in `.agents/skills/aligning-changes/SKILL.md`.
-- Run the deterministic CLI before announcing completion: `align index`, `align impact <ID>`, `align detect`, `align verify` (via `uvx align`, or `uv run align` inside the align-kit checkout).
-- Fix or explicitly resolve with the user every CRITICAL/HIGH detect finding before completion. Evidence before declaration: paste the `align verify` summary.
+- Run the deterministic CLI before announcing completion: `specripple index`, `specripple impact <ID>`, `specripple detect`, `specripple verify` (via `uvx specripple`, or `uv run specripple` inside the specripple checkout).
+- Fix or explicitly resolve with the user every CRITICAL/HIGH detect finding before completion. Evidence before declaration: paste the `specripple verify` summary.
 """
 
 CLAUDE_COMMAND = """\
 ---
-description: Align a requirement change across artifacts (align-kit)
+description: Align a requirement change across artifacts (specripple)
 ---
 
-Follow the `aligning-changes` skill (`.claude/skills/aligning-changes/SKILL.md`) end to end: index the repository, compute impact for the changed entries, route and edit every impacted artifact, run `align detect` plus the detecting-conflicts checklist, resolve conflicts with the user via resolving-conflicts when needed, run `align verify`, and report the verify summary as evidence before declaring completion.
+Follow the `aligning-changes` skill (`.claude/skills/aligning-changes/SKILL.md`) end to end: index the repository, compute impact for the changed entries, route and edit every impacted artifact, run `specripple detect` plus the detecting-conflicts checklist, resolve conflicts with the user via resolving-conflicts when needed, run `specripple verify`, and report the verify summary as evidence before declaring completion.
 """
 
-_BLOCK_PATTERN = re.compile(r"<!-- align-kit:begin [^>]*-->.*?<!-- align-kit:end -->\n?", re.DOTALL)
+_BLOCK_PATTERN = re.compile(r"<!-- specripple:begin [^>]*-->.*?<!-- specripple:end -->\n?", re.DOTALL)
 
 
 def agents_block() -> str:
-    header = f"<!-- align-kit:begin v{__version__} -->"
+    header = f"<!-- specripple:begin v{__version__} -->"
     return f"{header}\n{AGENTS_BODY}{BLOCK_END}\n"
 
 
 def upsert_agents_block(existing: str) -> str:
-    """Replace any existing align-kit block with the current one (idempotent)."""
+    """Replace any existing specripple block with the current one (idempotent)."""
     text = _BLOCK_PATTERN.sub("", existing).rstrip("\n")
     block = agents_block().rstrip("\n")
     if not text.strip():
@@ -48,7 +48,7 @@ def upsert_agents_block(existing: str) -> str:
 
 
 def strip_agents_block(existing: str) -> tuple[str, bool]:
-    """Remove the align-kit block; return (new_text, whether_removed)."""
+    """Remove the specripple block; return (new_text, whether_removed)."""
     new_text, count = _BLOCK_PATTERN.subn("", existing)
     if count == 0:
         return existing, False
@@ -85,12 +85,12 @@ def managed_paths(root: Path, host: str) -> dict[Path, str]:
         if host == "claude":
             mapping[root / ".claude" / "skills" / name / "SKILL.md"] = thin_shell(skill_source_text(name), name)
     if host == "claude":
-        mapping[root / ".claude" / "commands" / "align.md"] = CLAUDE_COMMAND
+        mapping[root / ".claude" / "commands" / "specripple.md"] = CLAUDE_COMMAND
     return mapping
 
 
 def run_init(root: Path, host: str, remove: bool = False, dry_run: bool = False) -> list[str]:
-    """Install or remove align-kit host integration; return a list of action lines."""
+    """Install or remove specripple host integration; return a list of action lines."""
     if host not in HOSTS:
         raise ValueError(f"unknown host {host!r} (expected one of {', '.join(HOSTS)})")
     actions: list[str] = []
@@ -100,7 +100,7 @@ def run_init(root: Path, host: str, remove: bool = False, dry_run: bool = False)
         if agents.is_file():
             new_text, changed = strip_agents_block(agents.read_text(encoding="utf-8"))
             if changed:
-                actions.append("strip align-kit block from AGENTS.md")
+                actions.append("strip specripple block from AGENTS.md")
                 if not dry_run:
                     agents.write_text(new_text, encoding="utf-8")
         for path, expected in managed_paths(root, host).items():
@@ -120,7 +120,7 @@ def run_init(root: Path, host: str, remove: bool = False, dry_run: bool = False)
     if new_text == current:
         actions.append("AGENTS.md block already up to date")
     else:
-        actions.append("create AGENTS.md" if not agents.is_file() else "upsert align-kit block in AGENTS.md")
+        actions.append("create AGENTS.md" if not agents.is_file() else "upsert specripple block in AGENTS.md")
         if not dry_run:
             agents.write_text(new_text, encoding="utf-8")
 

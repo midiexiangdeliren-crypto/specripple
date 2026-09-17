@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from align_kit.detect import detect
-from align_kit.repo import load_entries
-from align_kit.speckit_import import import_speckit
+from specripple.detect import detect
+from specripple.repo import load_entries
+from specripple.speckit_import import import_speckit
 
 FIXTURES = Path(__file__).parent / "fixtures" / "speckit-sample"
 GOLDEN = Path(__file__).parent / "golden" / "speckit_import"

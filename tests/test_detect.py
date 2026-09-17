@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from align_kit.detect import detect
-from align_kit.repo import load_entries
+from specripple.detect import detect
+from specripple.repo import load_entries
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mini"
 
