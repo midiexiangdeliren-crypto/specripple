@@ -1,5 +1,7 @@
 # specripple
 
+English | [简体中文](README.zh-CN.md)
+
 Change-driven multi-artifact alignment for AI coding agents: modify a requirement, and every affected artifact (plan / spec / tasks / constitution) stays aligned.
 
 This repository hosts the deterministic core CLI (zero-LLM) plus the host integration layer (`specripple init` ships a versioned AGENTS.md block and three agent skills; an MCP server is a planned phase-2 layer).
