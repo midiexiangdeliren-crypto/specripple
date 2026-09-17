@@ -1,0 +1,13 @@
+fail_to_pass:
+  - checker: file_contains
+    file: artifacts/spec/REQ-001.md
+    text: "email and password"
+pass_to_pass:
+  - checker: file_exists
+    file: artifacts/constitution/CON-001.md
+  - checker: file_not_contains
+    file: artifacts/tasks/TASK-002.md
+    text: "PLACEHOLDER-BROKEN"
+  - checker: regex_match
+    file: artifacts/tasks/TASK-002.md
+    pattern: "REQ-002"

@@ -9,6 +9,7 @@ import typer
 
 from .detect import SEVERITIES
 from .detect import detect as run_detect
+from .demo import prepare_demo_temp, run_demo
 from .impact import compute_impact
 from .index_build import build_index, write_index
 from .repo import load_entries
@@ -139,3 +140,9 @@ def verify(
         typer.secho(f"verify: FAIL ({summary['failed']} of {summary['total']} failed)", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     typer.secho(f"verify: PASS ({summary['total']} assertions)", fg=typer.colors.GREEN)
+
+
+@app.command()
+def demo() -> None:
+    """Copy the bundled demo project to a temp dir and run index/impact/detect/verify."""
+    run_demo(prepare_demo_temp())

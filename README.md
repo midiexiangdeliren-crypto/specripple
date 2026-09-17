@@ -6,13 +6,14 @@ This repository hosts the deterministic core CLI (zero-LLM). Host integrations (
 
 ## Status
 
-v0.1.0 — work in progress. Schema v0 with `align index` and `align impact`.
+v0.1.0 — work in progress. Schema v0 with index / impact / detect / verify / demo.
 
 ## Quick start
 
 ```bash
 uv sync
 uv run pytest -q
+uv run align demo
 ```
 
 Try the commands on the bundled mini project:
@@ -51,3 +52,6 @@ links:
 
 - `align index` — parse `artifacts/**/*.md`, validate schema, write `index.json`.
 - `align impact <ID>` — BFS closure over outgoing links plus reverse `depends_on` edges; reports the impacted artifact set with evidence chains and unresolved references.
+- `align detect` — zero-token rule layer: dangling refs, duplicate ids, state-machine violations, structure violations, residue markers, glossary terms; CRITICAL/HIGH/MEDIUM/LOW report.
+- `align verify` — run `assertions.yaml` (fail_to_pass / pass_to_pass) with file_exists / file_contains / file_not_contains / regex_match checkers; nonzero exit on any failure.
+- `align demo` — copy the bundled demo project to a temp dir and run the full flow end to end.
