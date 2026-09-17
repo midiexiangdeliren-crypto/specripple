@@ -2,11 +2,11 @@
 
 Change-driven multi-artifact alignment for AI coding agents: modify a requirement, and every affected artifact (plan / spec / tasks / constitution) stays aligned.
 
-This repository hosts the deterministic core CLI (zero-LLM). Host integrations (AGENTS.md blocks, agent skills, MCP server) are planned layers on top.
+This repository hosts the deterministic core CLI (zero-LLM) plus the host integration layer (`align init` ships a versioned AGENTS.md block and three agent skills; an MCP server is a planned phase-2 layer).
 
 ## Status
 
-v0.1.0 — work in progress. Schema v0 with index / impact / detect / verify / demo.
+v0.1.0 — all commands implemented and tested (schema v0): index / impact / detect / verify / demo / init / import-speckit. Live-tested end to end on Codex CLI (non-interactive flow and interactive conflict resolution) and DeepSeek Harness (headless flow and MCP bridge); see "Verified hosts" below.
 
 ## Quick start
 
@@ -67,3 +67,11 @@ Skills (single source in the package, copied on init):
 - `aligning-changes` — the main workflow: impact -> route (L0-L3) -> edit -> detect -> resolve -> verify, with evidence-before-declaration discipline.
 - `detecting-conflicts` — the six semantic checks (duplication, ambiguity, underspecification, constitution alignment, coverage gaps, inconsistency) that the rule layer cannot catch.
 - `resolving-conflicts` — one-question-at-a-time resolution protocol with options, recommendations, and rationale entries.
+
+## Verified hosts
+
+Live runs against a demo-derived project (change an entry, agent propagates autonomously, detect/verify green):
+
+- **Codex CLI** (`align init --host codex`): agent reads the skills unprompted, runs index/impact/edits/detect/verify itself, adds rationale entries for breaking changes per CON, and balances assertions.yaml. Both the autonomous flow and the interactive resolution protocol (one question, options, recommendation, RAT entry) behaved as designed. Note: the workspace sandbox may block the bundled apply-patch helper; agents typically fall back to the sandbox-accessible copy under `~/.codex/.sandbox-bin/`.
+- **DeepSeek Harness** (dsh >= 0.1.5, headless profile): natively compatible with `align init` output with zero adaptation — `dsh-agent-instructions` reads AGENTS.md by default and `dsh-skill-filesystem` scans `<project>/.agents/skills`. MCP servers can be attached per profile via a `dsh-mcp-client` insert in the profile's `cordis.patch.yml` (stdio; on Windows wrap the command with `cmd /c`).
+- **Claude Code** (`align init --host claude`): installs thin skill mirrors in `.claude/skills/` and a `/align` command; live run deferred.
