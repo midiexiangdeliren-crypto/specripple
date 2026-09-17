@@ -55,3 +55,14 @@ links:
 - `align detect` — zero-token rule layer: dangling refs, duplicate ids, state-machine violations, structure violations, residue markers, glossary terms; CRITICAL/HIGH/MEDIUM/LOW report.
 - `align verify` — run `assertions.yaml` (fail_to_pass / pass_to_pass) with file_exists / file_contains / file_not_contains / regex_match checkers; nonzero exit on any failure.
 - `align demo` — copy the bundled demo project to a temp dir and run the full flow end to end.
+- `align init --host codex|claude [--remove] [--dry-run]` — install host integration: a versioned marked block in AGENTS.md plus the three skills in `.agents/skills/` (Claude Code additionally gets thin mirrors in `.claude/skills/` and a `/align` command). Idempotent and reversible.
+
+## Host integration
+
+`align init` writes only files it owns. The AGENTS.md block sits between `<!-- align-kit:begin vX.Y.Z -->` and `<!-- align-kit:end -->` markers and is replaced (never duplicated) on re-init. `--remove` strips the block and deletes managed skill files, but skips any file you have modified.
+
+Skills (single source in the package, copied on init):
+
+- `aligning-changes` — the main workflow: impact -> route (L0-L3) -> edit -> detect -> resolve -> verify, with evidence-before-declaration discipline.
+- `detecting-conflicts` — the six semantic checks (duplication, ambiguity, underspecification, constitution alignment, coverage gaps, inconsistency) that the rule layer cannot catch.
+- `resolving-conflicts` — one-question-at-a-time resolution protocol with options, recommendations, and rationale entries.

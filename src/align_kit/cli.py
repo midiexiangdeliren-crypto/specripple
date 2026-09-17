@@ -12,6 +12,7 @@ from .detect import detect as run_detect
 from .demo import prepare_demo_temp, run_demo
 from .impact import compute_impact
 from .index_build import build_index, write_index
+from .init_host import run_init
 from .repo import load_entries
 from .verify import run_verify
 
@@ -146,3 +147,23 @@ def verify(
 def demo() -> None:
     """Copy the bundled demo project to a temp dir and run index/impact/detect/verify."""
     run_demo(prepare_demo_temp())
+
+
+@app.command()
+def init(
+    host: str = typer.Option(..., "--host", help="Target host: codex or claude."),
+    root: Path = typer.Option(Path("."), "--root", help="Project root to set up."),
+    remove: bool = typer.Option(False, "--remove", help="Remove align-kit managed files."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print actions without writing."),
+) -> None:
+    """Install (or remove) align-kit host integration files."""
+    try:
+        actions = run_init(root, host, remove=remove, dry_run=dry_run)
+    except ValueError as exc:
+        _fail(str(exc))
+        return
+    prefix = "[dry-run] " if dry_run else ""
+    for action in actions:
+        typer.echo(f"{prefix}{action}")
+    tag = " (dry-run)" if dry_run else ""
+    typer.secho(f"init{tag} done: {len(actions)} action(s)", fg=typer.colors.GREEN)
