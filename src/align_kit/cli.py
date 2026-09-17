@@ -14,6 +14,7 @@ from .impact import compute_impact
 from .index_build import build_index, write_index
 from .init_host import run_init
 from .repo import load_entries
+from .speckit_import import import_speckit
 from .verify import run_verify
 
 app = typer.Typer(
@@ -167,3 +168,31 @@ def init(
         typer.echo(f"{prefix}{action}")
     tag = " (dry-run)" if dry_run else ""
     typer.secho(f"init{tag} done: {len(actions)} action(s)", fg=typer.colors.GREEN)
+
+
+@app.command("import-speckit")
+def import_speckit_cmd(
+    src: Path = typer.Argument(..., help="Directory with spec-kit spec.md/plan.md/tasks.md/constitution.md."),
+    root: Path = typer.Option(Path("."), "--root", help="Project root to write artifacts/ into."),
+    json_out: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
+) -> None:
+    """Convert Spec Kit artifacts into the align-kit entry repository."""
+    try:
+        result = import_speckit(src, root)
+    except ValueError as exc:
+        _fail(str(exc))
+        return
+    counts = result["counts"]
+    if json_out:
+        typer.echo(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    for warning in result["warnings"]:
+        typer.secho(f"warning: {warning}", fg=typer.colors.YELLOW)
+    for item in result["created"]:
+        typer.echo(f"  wrote {item['path']} ({item['id']})")
+    typer.secho(
+        f"import-speckit: {sum(counts.values())} entries from {src.as_posix()} "
+        f"(REQ {counts.get('req', 0)}, TASK {counts.get('task', 0)}, "
+        f"PLAN {counts.get('plan', 0)}, CON {counts.get('con', 0)})",
+        fg=typer.colors.GREEN,
+    )

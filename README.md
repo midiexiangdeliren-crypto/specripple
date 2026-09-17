@@ -56,6 +56,7 @@ links:
 - `align verify` — run `assertions.yaml` (fail_to_pass / pass_to_pass) with file_exists / file_contains / file_not_contains / regex_match checkers; nonzero exit on any failure.
 - `align demo` — copy the bundled demo project to a temp dir and run the full flow end to end.
 - `align init --host codex|claude [--remove] [--dry-run]` — install host integration: a versioned marked block in AGENTS.md plus the three skills in `.agents/skills/` (Claude Code additionally gets thin mirrors in `.claude/skills/` and a `/align` command). Idempotent and reversible.
+- `align import-speckit <src>` — convert Spec Kit artifacts (spec.md / plan.md / tasks.md / constitution.md) into the entry repository: user stories become REQ entries (P1=active), checkbox tasks become TASK entries wired to their story via `depends_on`, plan and constitution become PLAN/CON entries. Guarded by a golden-snapshot test.
 
 ## Host integration
 
