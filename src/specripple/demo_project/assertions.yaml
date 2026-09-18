@@ -2,6 +2,9 @@ fail_to_pass:
   - checker: file_contains
     file: artifacts/spec/REQ-001.md
     text: "email and password"
+  - checker: command
+    command: python tests/test_login.py
+    timeout: 60
 pass_to_pass:
   - checker: file_exists
     file: artifacts/constitution/CON-001.md

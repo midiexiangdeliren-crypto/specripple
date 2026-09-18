@@ -133,8 +133,9 @@ def verify(
             mark = "PASS" if item["status"] == "pass" else "FAIL"
             color = typer.colors.GREEN if item["status"] == "pass" else typer.colors.RED
             suffix = f" ({item['detail']})" if item["detail"] else ""
+            target = item["file"] or item["command"]
             typer.secho(
-                f"  [{mark}] {group} #{item['index'] + 1} {item['checker']} {item['file']}{suffix}",
+                f"  [{mark}] {group} #{item['index'] + 1} {item['checker']} {target}{suffix}",
                 fg=color,
             )
     summary = report["summary"]

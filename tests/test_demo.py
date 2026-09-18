@@ -14,7 +14,7 @@ def test_demo_full_run(tmp_path, capsys):
     assert "[detect] 2 finding(s)" in out
     assert "[CRITICAL D1]" in out
     assert "[HIGH D5]" in out
-    assert "[verify] PASS (4 assertions)" in out
+    assert "[verify] PASS (5 assertions)" in out
     assert (target / "index.json").exists()
 
 

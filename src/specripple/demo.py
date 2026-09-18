@@ -56,9 +56,10 @@ def run_demo(project_root: Path) -> None:
     for group, items in report["groups"].items():
         for item in items:
             ok = item["status"] == "pass"
+            target = item["file"] or item["command"]
             typer.secho(
                 f"[verify {'PASS' if ok else 'FAIL'}] {group} #{item['index'] + 1} "
-                f"{item['checker']} {item['file']}",
+                f"{item['checker']} {target}",
                 fg=typer.colors.GREEN if ok else typer.colors.RED,
             )
     summary = report["summary"]

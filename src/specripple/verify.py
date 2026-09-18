@@ -3,21 +3,26 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-CHECKERS = ("file_exists", "file_contains", "file_not_contains", "regex_match")
+CHECKERS = ("file_exists", "file_contains", "file_not_contains", "regex_match", "command")
+
+COMMAND_DETAIL_LIMIT = 200
 
 
 class Assertion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     checker: str
-    file: str
+    file: str = ""
     text: str = ""
     pattern: str = ""
+    command: str = ""
+    timeout: float = 120.0
 
     @field_validator("checker")
     @classmethod
@@ -28,6 +33,12 @@ class Assertion(BaseModel):
 
     @model_validator(mode="after")
     def _required_params(self) -> "Assertion":
+        if self.checker == "command":
+            if not self.command:
+                raise ValueError("command requires 'command'")
+            if self.timeout <= 0:
+                raise ValueError("'timeout' must be positive")
+            return self
         if not self.file:
             raise ValueError("'file' is required")
         if self.checker == "regex_match":
@@ -68,7 +79,28 @@ def load_assertions(project_root: Path) -> dict[str, list[Assertion]]:
     return groups
 
 
+def _check_command(assertion: Assertion, project_root: Path) -> tuple[bool, str]:
+    try:
+        completed = subprocess.run(
+            assertion.command,
+            shell=True,
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=assertion.timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"timeout after {assertion.timeout:g}s"
+    if completed.returncode == 0:
+        return True, ""
+    tail = (completed.stderr or completed.stdout or "").strip()[-COMMAND_DETAIL_LIMIT:]
+    return False, f"exit {completed.returncode}: {tail}" if tail else f"exit {completed.returncode}"
+
+
 def _check(assertion: Assertion, project_root: Path) -> tuple[bool, str]:
+    if assertion.checker == "command":
+        return _check_command(assertion, project_root)
     path = project_root / assertion.file
     if assertion.checker == "file_exists":
         return path.is_file(), "" if path.is_file() else "missing file"
@@ -103,6 +135,7 @@ def run_verify(project_root: Path) -> dict:
                     "index": position,
                     "checker": assertion.checker,
                     "file": assertion.file,
+                    "command": assertion.command,
                     "status": "pass" if ok else "fail",
                     "detail": detail,
                 }

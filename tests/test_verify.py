@@ -101,3 +101,65 @@ def test_missing_assertions_file(tmp_path):
     _write(tmp_path, "artifacts/spec/REQ-001.md", "hello\n")
     with pytest.raises(ValueError, match="assertions.yaml not found"):
         run_verify(tmp_path)
+
+
+def test_command_pass_and_fail(tmp_path):
+    _write(
+        tmp_path,
+        "assertions.yaml",
+        "fail_to_pass:\n"
+        "  - checker: command\n"
+        '    command: python -c "import sys; sys.exit(0)"\n'
+        "pass_to_pass:\n"
+        "  - checker: command\n"
+        '    command: python -c "import sys; sys.exit(3)"\n',
+    )
+    report = run_verify(tmp_path)
+    assert report["summary"]["failed"] == 1
+    fail_item = report["groups"]["pass_to_pass"][0]
+    assert fail_item["status"] == "fail"
+    assert "exit 3" in fail_item["detail"]
+
+
+def test_command_runs_at_project_root(tmp_path):
+    _write(tmp_path, "notes.txt", "x\n")
+    _write(tmp_path, "check_root.py", "import pathlib, sys\nsys.exit(0 if pathlib.Path('notes.txt').is_file() else 1)\n")
+    _write(
+        tmp_path,
+        "assertions.yaml",
+        "fail_to_pass: []\npass_to_pass:\n  - checker: command\n    command: python check_root.py\n",
+    )
+    report = run_verify(tmp_path)
+    assert report["summary"]["failed"] == 0
+
+
+def test_command_timeout_is_failure(tmp_path):
+    _write(
+        tmp_path,
+        "assertions.yaml",
+        "fail_to_pass:\n"
+        "  - checker: command\n"
+        '    command: python -c "import time; time.sleep(5)"\n'
+        "    timeout: 0.5\n"
+        "pass_to_pass: []\n",
+    )
+    report = run_verify(tmp_path)
+    item = report["groups"]["fail_to_pass"][0]
+    assert item["status"] == "fail"
+    assert "timeout" in item["detail"]
+
+
+def test_command_requires_command_field(tmp_path):
+    _write(tmp_path, "assertions.yaml", "fail_to_pass:\n  - checker: command\npass_to_pass: []\n")
+    with pytest.raises(ValueError, match="command requires 'command'"):
+        run_verify(tmp_path)
+
+
+def test_command_negative_timeout_rejected(tmp_path):
+    _write(
+        tmp_path,
+        "assertions.yaml",
+        "fail_to_pass:\n  - checker: command\n    command: python -c \"pass\"\n    timeout: -1\npass_to_pass: []\n",
+    )
+    with pytest.raises(ValueError, match="timeout"):
+        run_verify(tmp_path)
