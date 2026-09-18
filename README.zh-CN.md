@@ -8,9 +8,17 @@
 
 ## 状态
 
-v0.1.0 — 全部命令已实现并通过测试（schema v0）：index / impact / detect / verify / demo / init / import-speckit。已在 Codex CLI（非交互流程 + 交互式冲突消解）和 DeepSeek Harness（headless 流程 + MCP 桥）上完成端到端真机实测，见下方"实测宿主"。
+v0.1.1 — 全部命令已实现并通过测试（schema v0）：index / impact / detect / verify / demo / init / import-speckit。已在 Codex CLI（非交互流程 + 交互式冲突消解）和 DeepSeek Harness（headless 流程 + MCP 桥）上完成端到端真机实测，见下方"实测宿主"。
 
 ## 快速开始
+
+快速体验无需安装——uv 直接从 GitHub 拉取运行：
+
+```bash
+uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
+```
+
+或克隆后从源码运行：
 
 ```bash
 uv sync

@@ -8,9 +8,17 @@ This repository hosts the deterministic core CLI (zero-LLM) plus the host integr
 
 ## Status
 
-v0.1.0 — all commands implemented and tested (schema v0): index / impact / detect / verify / demo / init / import-speckit. Live-tested end to end on Codex CLI (non-interactive flow and interactive conflict resolution) and DeepSeek Harness (headless flow and MCP bridge); see "Verified hosts" below.
+v0.1.1 — all commands implemented and tested (schema v0): index / impact / detect / verify / demo / init / import-speckit. Live-tested end to end on Codex CLI (non-interactive flow and interactive conflict resolution) and DeepSeek Harness (headless flow and MCP bridge); see "Verified hosts" below.
 
 ## Quick start
+
+No install needed for a quick look — uv pulls straight from GitHub:
+
+```bash
+uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
+```
+
+Or clone and run from source:
 
 ```bash
 uv sync
