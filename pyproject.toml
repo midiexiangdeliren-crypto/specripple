@@ -1,6 +1,6 @@
 [project]
 name = "specripple"
-version = "0.1.0"
+version = "0.1.1"
 description = "Change-driven multi-artifact alignment for AI coding agents (deterministic core CLI)."
 readme = "README.md"
 requires-python = ">=3.11"
