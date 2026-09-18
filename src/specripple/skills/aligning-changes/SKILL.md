@@ -10,13 +10,13 @@ Propagate a requirement change through every affected artifact, then prove nothi
 ## Preconditions
 
 - Entry repository under `artifacts/`: one markdown file per entry (REQ/TASK/PLAN/CON/RAT), YAML frontmatter, `## Acceptance` with Given/When/Then for active reqs.
-- `specripple` CLI available: `uvx align` (published) or `uv run align` (from the specripple checkout). All commands take `--root .` and support `--json`.
+- `specripple` CLI available. No install needed: `uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple <command>`; or install once with `uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple` and call `specripple <command>` directly. (`uv run specripple` works only inside the specripple source checkout.) All commands take `--root <project root>` (use `.` when the working directory is the project root) and support `--json`.
 - If `artifacts/` is empty, create the entries first (or convert Spec Kit output with import-speckit). Never sync an empty repository.
 
 ## Workflow
 
 1. **Index** - run `specripple index --root .`. Fix any parse, schema, or duplicate-id errors it reports before continuing; they mean the repository is not well-formed.
-2. **Baseline + impact** - run `specripple detect --root .` once to record pre-existing findings (so you can tell them apart from what you introduce). Then run `specripple impact <ID> --root .` for each changed entry. The impact set is your work queue; every item comes with an evidence chain explaining why it is affected.
+2. **Baseline + impact** - run `specripple detect --root .` once (report mode, no `--fail-on`) to record pre-existing findings (so you can tell them apart from what you introduce). Then run `specripple impact <ID> --root .` for each changed entry. The impact set is your work queue; every item comes with an evidence chain explaining why it is affected.
 3. **Route each impacted entry by change class:**
 
    | Class | Situation | Action |
@@ -30,7 +30,7 @@ Propagate a requirement change through every affected artifact, then prove nothi
 5. **Proposal notes** - for every L1+ edit, note: root cause, the expected fix, what could break, and the acceptance cases that would catch it. These notes feed resolution dialogue and review.
 6. **Detect** - run `specripple detect --root .`. Fix every CRITICAL/HIGH finding you introduced. Then run the detecting-conflicts skill checklist for semantic issues the rule layer cannot see (duplication, ambiguity, underspecification, constitution alignment, coverage gaps, inconsistency).
 7. **Verify** - run `specripple verify --root .`. fail_to_pass assertions must pass; pass_to_pass must stay green. If your change altered behavior that assertions.yaml should cover, add or update assertions in the same turn.
-8. **Evidence before declaration** - do not announce completion until `specripple index`, `specripple impact`, `specripple detect`, and `specripple verify` have all been run in this turn and their outputs support the claim. Paste the verify summary as evidence.
+8. **Evidence before declaration** - do not announce completion until `specripple index`, `specripple impact`, `specripple detect --root . --fail-on HIGH`, and `specripple verify` have all been run in this turn and their outputs support the claim. The `--fail-on HIGH` gate exits 1 while any CRITICAL/HIGH finding remains: a nonzero exit means completion must not be declared. Paste the verify summary as evidence.
 
 ## Hard rules
 

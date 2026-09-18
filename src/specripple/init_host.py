@@ -18,8 +18,14 @@ AGENTS_BODY = """\
 `artifacts/` holds the entry repository: one markdown file per entry (REQ/TASK/PLAN/CON/RAT), YAML frontmatter, schema v0.
 
 - When the user changes a requirement or asks to sync/align artifacts, follow the `aligning-changes` skill in `.agents/skills/aligning-changes/SKILL.md`.
-- Run the deterministic CLI before announcing completion: `specripple index`, `specripple impact <ID>`, `specripple detect`, `specripple verify` (via `uvx specripple`, or `uv run specripple` inside the specripple checkout).
-- Fix or explicitly resolve with the user every CRITICAL/HIGH detect finding before completion. Evidence before declaration: paste the `specripple verify` summary.
+- Run the deterministic CLI before announcing completion: `specripple index`, `specripple impact <ID>`, `specripple detect`, `specripple verify` (see install notes below for how to invoke it).
+- Baseline detection stays in report mode so pre-existing findings stay visible. Gate completion on `specripple detect --root . --fail-on HIGH` exiting 0: a nonzero exit means CRITICAL/HIGH findings remain and completion must not be declared. Fix or explicitly resolve every CRITICAL/HIGH finding with the user. Evidence before declaration: paste the `specripple verify` summary.
+
+Install / invoke the CLI (specripple is distributed via GitHub, not PyPI):
+
+- No install: `uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple <command>`
+- Or install once: `uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple`, then call `specripple <command>`
+- `uv run specripple` only works inside the specripple source checkout. When the working directory is not this project's root, pass the project explicitly: `specripple <command> --root <path to project root>`.
 """
 
 CLAUDE_COMMAND = """\
@@ -27,7 +33,7 @@ CLAUDE_COMMAND = """\
 description: Align a requirement change across artifacts (specripple)
 ---
 
-Follow the `aligning-changes` skill (`.claude/skills/aligning-changes/SKILL.md`) end to end: index the repository, compute impact for the changed entries, route and edit every impacted artifact, run `specripple detect` plus the detecting-conflicts checklist, resolve conflicts with the user via resolving-conflicts when needed, run `specripple verify`, and report the verify summary as evidence before declaring completion.
+Follow the `aligning-changes` skill (`.claude/skills/aligning-changes/SKILL.md`) end to end: index the repository, compute impact for the changed entries, route and edit every impacted artifact, run `specripple detect` (report mode) plus the detecting-conflicts checklist, resolve conflicts with the user via resolving-conflicts when needed, then gate completion on `specripple detect --root . --fail-on HIGH` and `specripple verify`, and report the verify summary as evidence before declaring completion.
 """
 
 _BLOCK_PATTERN = re.compile(r"<!-- specripple:begin [^>]*-->.*?<!-- specripple:end -->\n?", re.DOTALL)

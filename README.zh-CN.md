@@ -18,7 +18,14 @@ v0.1.1 — 全部命令已实现并通过测试（schema v0）：index / impact 
 uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
 ```
 
-或克隆后从源码运行：
+或安装一次后直接调用 `specripple`：
+
+```bash
+uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple
+specripple demo
+```
+
+或克隆后从源码运行（`uv run specripple` 仅在本源码工程内可用；用安装版或 uvx 操作其他项目时，请通过 `--root` 明确传入项目路径）：
 
 ```bash
 uv sync

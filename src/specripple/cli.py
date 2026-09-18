@@ -89,8 +89,19 @@ SEVERITY_COLORS = {
 def detect(
     root: Path = typer.Option(Path("."), "--root", help="Project root containing artifacts/."),
     json_out: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
+    fail_on: str | None = typer.Option(
+        None,
+        "--fail-on",
+        help="Exit 1 when findings at this severity or above exist (CRITICAL|HIGH|MEDIUM|LOW).",
+    ),
 ) -> None:
     """Run the zero-token rule layer over the artifact repository."""
+    threshold: str | None = None
+    if fail_on is not None:
+        threshold = fail_on.upper()
+        if threshold not in SEVERITIES:
+            _fail(f"invalid --fail-on {fail_on!r} (expected one of {', '.join(SEVERITIES)})")
+            return
     try:
         findings = run_detect(load_entries(root), root)
     except ValueError as exc:
@@ -102,16 +113,20 @@ def detect(
     if json_out:
         payload = {"findings": findings, "summary": {"total": len(findings), "counts": counts}}
         typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
-        return
-    typer.echo(
-        f"detect: {len(findings)} finding(s) "
-        f"(CRITICAL {counts['CRITICAL']}, HIGH {counts['HIGH']}, MEDIUM {counts['MEDIUM']}, LOW {counts['LOW']})"
-    )
-    for finding in findings:
-        typer.secho(
-            f"  [{finding['severity']} {finding['rule']}] {finding['message']}",
-            fg=SEVERITY_COLORS[finding["severity"]],
+    else:
+        typer.echo(
+            f"detect: {len(findings)} finding(s) "
+            f"(CRITICAL {counts['CRITICAL']}, HIGH {counts['HIGH']}, MEDIUM {counts['MEDIUM']}, LOW {counts['LOW']})"
         )
+        for finding in findings:
+            typer.secho(
+                f"  [{finding['severity']} {finding['rule']}] {finding['message']}",
+                fg=SEVERITY_COLORS[finding["severity"]],
+            )
+    if threshold is not None:
+        cutoff = SEVERITIES.index(threshold)
+        if any(SEVERITIES.index(finding["severity"]) <= cutoff for finding in findings):
+            raise typer.Exit(code=1)
 
 
 @app.command()
@@ -125,8 +140,11 @@ def verify(
     except ValueError as exc:
         _fail(str(exc))
         return
+    summary = report["summary"]
     if json_out:
         typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+        if summary["failed"]:
+            raise typer.Exit(code=1)
         return
     for group, items in report["groups"].items():
         for item in items:
@@ -138,7 +156,6 @@ def verify(
                 f"  [{mark}] {group} #{item['index'] + 1} {item['checker']} {target}{suffix}",
                 fg=color,
             )
-    summary = report["summary"]
     if summary["failed"]:
         typer.secho(f"verify: FAIL ({summary['failed']} of {summary['total']} failed)", fg=typer.colors.RED)
         raise typer.Exit(code=1)

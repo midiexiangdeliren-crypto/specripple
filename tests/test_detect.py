@@ -77,6 +77,73 @@ def test_d4_negative_tasks_draft_reqs_and_valid_reqs():
     assert [f for f in findings if f["rule"] == "D4"] == []
 
 
+def test_d4_gwt_bold_list_form_clean(tmp_path):
+    # Official template style: numbered bold Given/When/Then list.
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: active",
+        "Body.\n\n## Acceptance\n\n1. **Given** a registered user, **When** credentials are submitted, **Then** a session is issued\n",
+    )
+    assert [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"] == []
+
+
+def test_d4_gwt_table_form_clean(tmp_path):
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: active",
+        "Body.\n\n## Acceptance\n\n| Given | When | Then |\n| --- | --- | --- |\n| Registered user | Valid credentials | Session issued |\n",
+    )
+    assert [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"] == []
+
+
+def test_d4_gwt_outside_acceptance_does_not_count(tmp_path):
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: active",
+        "Given the context, When nothing happens, Then nothing changes.\n\n## Acceptance\n\nThe system shall behave correctly.\n",
+    )
+    d4 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"]
+    assert len(d4) == 1
+    assert "Given/When/Then" in d4[0]["message"]
+
+
+def test_d4_gwt_split_across_regions_does_not_count(tmp_path):
+    body = (
+        "## Acceptance\n\n- Given a user, when the session expires, redirect to login.\n\n"
+        "## Other\n\nText.\n\n"
+        "## Acceptance\n\nThen the user stays logged in.\n"
+    )
+    _write(tmp_path, "REQ-001.md", "id: REQ-001\ntype: req\ntitle: x\nstatus: active", body)
+    d4 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"]
+    assert len(d4) == 1
+    assert "Given/When/Then" in d4[0]["message"]
+
+
+def test_d4_gwt_case_insensitive(tmp_path):
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: active",
+        "## Acceptance\n\n- given a user, WHEN the app restarts, then the session persists.\n",
+    )
+    assert [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"] == []
+
+
+def test_d4_region_boundary_is_same_or_higher_heading(tmp_path):
+    # A `### Acceptance` region must not swallow a following `##` section.
+    body = (
+        "### Acceptance\n\nThe system shall behave.\n\n"
+        "## Notes\n\nGiven something, when it happens, then record it.\n"
+    )
+    _write(tmp_path, "REQ-001.md", "id: REQ-001\ntype: req\ntitle: x\nstatus: active", body)
+    d4 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D4"]
+    assert len(d4) == 1
+    assert "Given/When/Then" in d4[0]["message"]
+
+
 def test_d5_residue_marker():
     findings = detect(load_entries(FIXTURES), FIXTURES)
     d5 = [f for f in findings if f["rule"] == "D5"]
@@ -84,6 +151,45 @@ def test_d5_residue_marker():
     assert d5[0]["severity"] == "HIGH"
     assert d5[0]["entry_id"] == "REQ-003"
     assert "TODO" in d5[0]["message"]
+
+
+def test_d5_needs_clarification_bare(tmp_path):
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: draft",
+        "Pending [NEEDS CLARIFICATION] here.",
+    )
+    d5 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D5"]
+    assert len(d5) == 1
+    assert d5[0]["severity"] == "HIGH"
+    assert "NEEDS CLARIFICATION" in d5[0]["message"]
+
+
+def test_d5_needs_clarification_with_question(tmp_path):
+    # Official Spec Kit placeholder form: github/spec-kit commit
+    # 0cc9a6a1159471a3108b9bad718ba17006dd6039 (v1.0.8), templates/spec-template.md lines 98-99.
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: draft",
+        "System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]",
+    )
+    d5 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D5"]
+    assert len(d5) == 1
+    assert d5[0]["severity"] == "HIGH"
+
+
+def test_d5_needs_clarification_case_and_whitespace(tmp_path):
+    _write(
+        tmp_path,
+        "REQ-001.md",
+        "id: REQ-001\ntype: req\ntitle: x\nstatus: draft",
+        "Retention for [needs  clarification : 90 days] pending decision.",
+    )
+    d5 = [f for f in detect(load_entries(tmp_path), tmp_path) if f["rule"] == "D5"]
+    assert len(d5) == 1
+    assert d5[0]["severity"] == "HIGH"
 
 
 def test_d5_negative_clean_body(tmp_path):

@@ -7,7 +7,12 @@ from specripple.repo import load_entries
 from specripple.speckit_import import import_speckit
 
 FIXTURES = Path(__file__).parent / "fixtures" / "speckit-sample"
+OFFICIAL = Path(__file__).parent / "fixtures" / "speckit-official"
 GOLDEN = Path(__file__).parent / "golden" / "speckit_import"
+
+# Provenance for OFFICIAL (see fixtures/speckit-official/PROVENANCE.md):
+# github/spec-kit commit 0cc9a6a1159471a3108b9bad718ba17006dd6039 (tag v1.0.8),
+# file templates/spec-template.md. Tests run offline; nothing is fetched.
 
 
 def test_counts_and_mapping(tmp_path):
@@ -45,6 +50,29 @@ def test_acceptance_heading_normalized(tmp_path):
     assert "## Acceptance" in entries["REQ-002"].body
     assert "Acceptance Scenarios" not in entries["REQ-002"].body
     assert "Given" in entries["REQ-002"].body
+
+
+def test_official_template_bold_acceptance_imports(tmp_path):
+    """The official v1.0.8 template uses a bold `**Acceptance Scenarios**:` label."""
+    result = import_speckit(OFFICIAL, tmp_path)
+    assert result["counts"]["req"] == 3  # overview + user story 1 (P1) + user story 2 (P2)
+    entries = {e.id: e for e in load_entries(tmp_path)}
+    active = entries["REQ-002"]  # User Story 1, Priority P1
+    assert active.status.value == "active"
+    assert "## Acceptance" in active.body
+    assert "Acceptance Scenarios" not in active.body
+    assert "1. **Given**" in active.body  # acceptance body preserved verbatim
+    # Imported official template must pass the rule layer (story bounds kept).
+    assert detect(load_entries(tmp_path), tmp_path) == []
+
+
+def test_official_template_story_boundary_kept(tmp_path):
+    import_speckit(OFFICIAL, tmp_path)
+    entries = {e.id: e for e in load_entries(tmp_path)}
+    # Story 1's acceptance scenarios must not leak into story 2's entry.
+    assert "## Acceptance" in entries["REQ-002"].body
+    assert "2. **Given**" in entries["REQ-002"].body
+    assert "2. **Given**" not in entries["REQ-003"].body
 
 
 def test_imported_repository_is_detect_clean(tmp_path):

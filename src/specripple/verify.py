@@ -11,6 +11,8 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 CHECKERS = ("file_exists", "file_contains", "file_not_contains", "regex_match", "command")
 
+ALLOWED_GROUPS = ("fail_to_pass", "pass_to_pass")
+
 COMMAND_DETAIL_LIMIT = 200
 
 
@@ -54,28 +56,41 @@ class Assertion(BaseModel):
 
 
 def load_assertions(project_root: Path) -> dict[str, list[Assertion]]:
-    """Load and validate assertions.yaml from the project root."""
+    """Load and fully validate assertions.yaml before any check may run."""
     path = project_root / "assertions.yaml"
     if not path.is_file():
         raise ValueError(f"{path.as_posix()}: assertions.yaml not found")
+    raw = path.read_text(encoding="utf-8")
+    if not raw.strip():
+        raise ValueError(f"{path.as_posix()}: assertions.yaml is empty (at least one assertion is required)")
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = yaml.safe_load(raw)
     except yaml.YAMLError as exc:
         raise ValueError(f"{path.as_posix()}: invalid YAML: {exc}") from exc
     if not isinstance(data, dict):
         raise ValueError(f"{path.as_posix()}: top level must be a mapping")
+    unknown = sorted(str(key) for key in data if key not in ALLOWED_GROUPS)
+    if unknown:
+        raise ValueError(
+            f"{path.as_posix()}: unknown top-level field(s) {', '.join(repr(k) for k in unknown)} "
+            f"(allowed: {', '.join(ALLOWED_GROUPS)})"
+        )
     groups: dict[str, list[Assertion]] = {}
-    for group in ("fail_to_pass", "pass_to_pass"):
-        items = data.get(group) or []
-        if not isinstance(items, list):
+    for group in ALLOWED_GROUPS:
+        items = data.get(group, [])
+        if not isinstance(items, list):  # missing -> []; explicit null / scalar -> error
             raise ValueError(f"{path.as_posix()}: '{group}' must be a list")
         parsed: list[Assertion] = []
         for position, item in enumerate(items):
+            if not isinstance(item, dict):
+                raise ValueError(f"{path.as_posix()}: {group} #{position + 1}: each assertion must be a mapping")
             try:
                 parsed.append(Assertion(**item))
             except Exception as exc:
                 raise ValueError(f"{path.as_posix()}: {group} #{position + 1}: {exc}") from exc
         groups[group] = parsed
+    if not any(groups.values()):
+        raise ValueError(f"{path.as_posix()}: no assertions defined (fail_to_pass and pass_to_pass are both empty)")
     return groups
 
 

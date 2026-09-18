@@ -9,9 +9,10 @@ from .models import Entry, EntryStatus, EntryType
 
 SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW")
 
-TODO_PATTERN = re.compile(r"\b(?:TODO|FIXME)\b|\[NEEDS CLARIFICATION\]", re.IGNORECASE)
-GWT_PATTERN = re.compile(r"\b(?:Given|When|Then)\b")
-ACCEPTANCE_PATTERN = re.compile(r"^#{2,3}\s+Acceptance\b", re.MULTILINE)
+TODO_PATTERN = re.compile(r"\b(?:TODO|FIXME)\b|\[NEEDS\s+CLARIFICATION\s*(?::\s*[^\]]*)?\]", re.IGNORECASE)
+_GWT_WORD_PATTERNS = tuple(re.compile(rf"\b{word}\b", re.IGNORECASE) for word in ("given", "when", "then"))
+ACCEPTANCE_PATTERN = re.compile(r"^(#{2,3})\s+Acceptance\b")
+HEADING_PATTERN = re.compile(r"^(#{1,6})\s")
 BOLD_PATTERN = re.compile(r"\*\*([^*\n]+)\*\*")
 
 
@@ -25,12 +26,35 @@ def _finding(
     return {"rule": rule, "severity": severity, "entry_id": entry_id, "path": path, "message": message}
 
 
+def _acceptance_regions(body: str) -> list[str]:
+    """Text of every `##/### Acceptance` region, bounded by same-level or higher headings."""
+    lines = body.splitlines()
+    regions: list[str] = []
+    index = 0
+    while index < len(lines):
+        match = ACCEPTANCE_PATTERN.match(lines[index])
+        if not match:
+            index += 1
+            continue
+        level = len(match.group(1))
+        chunk = [lines[index]]
+        index += 1
+        while index < len(lines):
+            heading = HEADING_PATTERN.match(lines[index])
+            if heading and len(heading.group(1)) <= level:
+                break
+            chunk.append(lines[index])
+            index += 1
+        regions.append("\n".join(chunk))
+    return regions
+
+
 def detect(entries: list[Entry], project_root: Path) -> list[dict]:
     """Run the v0 rule set and return findings sorted by severity.
 
     Rules: D1 dangling references (CRITICAL), D2 duplicate ids (CRITICAL),
     D3 done entry depending on unfinished upstream (HIGH), D4 active req
-    without Acceptance block or Given/When/Then wording (MEDIUM), D5
+    without an Acceptance region containing Given/When/Then (MEDIUM), D5
     unresolved residue markers (HIGH), D6 bold terms missing from
     glossary.md (LOW, only when glossary.md exists).
     """
@@ -80,11 +104,13 @@ def detect(entries: list[Entry], project_root: Path) -> list[dict]:
                     )
                 )
 
-    # D4 active reqs need an Acceptance block and Given/When/Then wording
+    # D4 active reqs need an Acceptance region containing Given/When/Then
+    # (structure check only: presence and wording, not EARS syntax or semantics)
     for entry in entries:
         if entry.type != EntryType.REQ or entry.status != EntryStatus.ACTIVE:
             continue
-        if not ACCEPTANCE_PATTERN.search(entry.body):
+        regions = _acceptance_regions(entry.body)
+        if not regions:
             findings.append(
                 _finding(
                     "D4",
@@ -94,7 +120,20 @@ def detect(entries: list[Entry], project_root: Path) -> list[dict]:
                     entry.path.as_posix(),
                 )
             )
-        if not GWT_PATTERN.search(entry.body):
+            findings.append(
+                _finding(
+                    "D4",
+                    "MEDIUM",
+                    f"{entry.id} (active req) has no Given/When/Then acceptance wording",
+                    entry.id,
+                    entry.path.as_posix(),
+                )
+            )
+        elif not any(
+            all(pattern.search(region) for pattern in _GWT_WORD_PATTERNS) for region in regions
+        ):
+            # Given/When/Then must appear as whole words inside one region;
+            # occurrences elsewhere in the entry do not compensate.
             findings.append(
                 _finding(
                     "D4",

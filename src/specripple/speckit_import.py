@@ -17,6 +17,9 @@ _PRIORITY = re.compile(r"\(Priority:\s*P(\d)\)")
 _H123 = re.compile(r"^#{1,3}\s")
 _H12 = re.compile(r"^#{1,2}\s")
 _ACCEPTANCE_HEADING = re.compile(r"^#{2,4}\s*Acceptance Scenarios.*$")
+# Official template form (github/spec-kit v1.0.8): a bold label on its own line,
+# e.g. `**Acceptance Scenarios**:` — colon optional, case-insensitive.
+_ACCEPTANCE_BOLD = re.compile(r"^\s*\*\*Acceptance Scenarios\*\*\s*:?\s*$", re.IGNORECASE)
 _TASK_LINE = re.compile(r"^\s*-\s+\[([ xX])\]\s+(.+?)\s*$")
 _TASK_CODE = re.compile(r"^(T\d+)[\s:.](.+)$")
 _HEADING_STORY_CTX = re.compile(r"^#{1,4}.*User Story\s+(\d+)")
@@ -59,7 +62,10 @@ def _parse_spec(text: str) -> tuple[dict | None, list[dict]]:
         priority_match = _PRIORITY.search(story["heading"])
         story["priority"] = int(priority_match.group(1)) if priority_match else 1
         story["title"] = _clean_title(story["heading"])
-        story["lines"] = [_ACCEPTANCE_HEADING.sub("## Acceptance", line) for line in story["lines"]]
+        story["lines"] = [
+            _ACCEPTANCE_BOLD.sub("## Acceptance", _ACCEPTANCE_HEADING.sub("## Acceptance", line))
+            for line in story["lines"]
+        ]
 
     overview_body = "\n".join(overview_lines).strip("\n")
     if not overview_body:

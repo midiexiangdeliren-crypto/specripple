@@ -18,7 +18,14 @@ No install needed for a quick look — uv pulls straight from GitHub:
 uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
 ```
 
-Or clone and run from source:
+Or install once and call `specripple` directly:
+
+```bash
+uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple
+specripple demo
+```
+
+Or clone and run from source (`uv run specripple` only works inside this checkout; when pointing the installed or uvx CLI at another project, pass that project via `--root`):
 
 ```bash
 uv sync

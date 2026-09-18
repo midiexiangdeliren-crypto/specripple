@@ -1,6 +1,6 @@
 ---
 name: detecting-conflicts
-description: Use after propagating or aligning artifact changes, or when asked to check artifacts for conflicts, contradictions, or quality issues that the align detect rule layer cannot catch.
+description: Use after propagating or aligning artifact changes, or when asked to check artifacts for conflicts, contradictions, or quality issues that the specripple detect rule layer cannot catch.
 ---
 
 # Detecting Conflicts (LLM layer)

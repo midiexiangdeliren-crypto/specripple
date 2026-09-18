@@ -136,3 +136,31 @@ def test_managed_paths_match_installed_content(tmp_path):
     run_init(tmp_path, "claude")
     for path, expected in managed_paths(tmp_path, "claude").items():
         assert path.read_text(encoding="utf-8") == expected
+
+
+FORBIDDEN_LEGACY = ("uvx align", "uv run align", "align-kit")
+
+
+def _host_instruction_sources() -> list[str]:
+    return [agents_block(), CLAUDE_COMMAND] + [skill_source_text(name) for name in SKILL_NAMES]
+
+
+def test_no_legacy_command_or_package_references():
+    for text in _host_instruction_sources():
+        for forbidden in FORBIDDEN_LEGACY:
+            assert forbidden not in text, forbidden
+
+
+def test_install_instructions_use_github_distribution():
+    block = agents_block()
+    assert "uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple" in block
+    assert "uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple" in block
+    assert "--root" in block  # business projects are addressed via --root
+    skill = skill_source_text("aligning-changes")
+    assert "uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple" in skill
+    assert "uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple" in skill
+
+
+def test_detect_gate_instruction_present():
+    assert "--fail-on HIGH" in agents_block()
+    assert "--fail-on HIGH" in skill_source_text("aligning-changes")
