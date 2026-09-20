@@ -93,7 +93,7 @@ def test_build_package_layout(tmp_path):
     package = _build(tmp_path)
     for rel in REQUIRED_SKILL_FILES:
         assert (package / rel).is_file(), rel
-    for rel in ("runtime/pyproject.toml", "runtime/uv.lock", "runtime/README.zh-CN.md", "runtime/VERSION"):
+    for rel in ("runtime/pyproject.toml", "runtime/uv.lock", "runtime/README.md", "runtime/VERSION"):
         assert (package / rel).is_file(), rel
     assert (package / "runtime" / "src" / "specripple" / "cli.py").is_file()
     for junk in ("__pycache__", ".pytest_cache", ".git"):
@@ -140,7 +140,7 @@ def test_build_fails_loudly_on_missing_skill_file(tmp_path):
 
     fake = tmp_path / "fake-repo"
     (fake / "src" / "specripple" / "skills").mkdir(parents=True)
-    for rel in ("pyproject.toml", "uv.lock", "README.zh-CN.md"):
+    for rel in ("pyproject.toml", "uv.lock", "README.md"):
         shutil.copy2(REPO_ROOT / rel, fake / rel)
     shutil.copytree(SKILL_SOURCE_DIR, fake / "src" / "specripple" / "skills" / "specripple")
     (fake / "src" / "specripple" / "skills" / "specripple" / "references" / "artifact-format.md").unlink()
