@@ -30,7 +30,7 @@ REQUIRED_SKILL_FILES = (
     "assets/templates/rat-entry.md",
     "assets/templates/assertions.yaml",
 )
-REQUIRED_RUNTIME_FILES = ("pyproject.toml", "uv.lock", "README.md")
+REQUIRED_RUNTIME_FILES = ("pyproject.toml", "uv.lock", "README.zh-CN.md")
 
 EXCLUDED_DIRS = {
     ".git",

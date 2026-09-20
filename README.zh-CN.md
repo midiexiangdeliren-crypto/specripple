@@ -1,7 +1,5 @@
 # specripple
 
-[English](README.md) | 简体中文
-
 面向 AI 编程代理的"变更驱动多工件对齐"工具：你改需求，agent 列出带证据的影响集、传播编辑、与你逐题消解冲突，并用可执行验收把住完成关——而不是直接宣称"做完了"。
 
 产品是**一个技能**；底层由零 LLM 的确定性 CLI 负责检查。
@@ -15,8 +13,6 @@ v0.2.0（2026-09-20）：skill-first 产品——原三份技能合并为单一 
 ```bash
 uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
 ```
-
-不发布 PyPI（维护者决策）——uv 直接从 GitHub 拉取。
 
 ## 装进你的项目
 

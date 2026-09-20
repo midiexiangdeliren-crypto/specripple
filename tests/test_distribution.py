@@ -23,7 +23,7 @@ import pytest
 from specripple import skillbuild
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_PAYLOAD = ("pyproject.toml", "uv.lock", "README.md")
+REQUIRED_PAYLOAD = ("pyproject.toml", "uv.lock", "README.zh-CN.md")
 COPY_IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc")
 
 REQ_001 = """---

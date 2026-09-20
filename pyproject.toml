@@ -2,7 +2,7 @@
 name = "specripple"
 version = "0.2.0"
 description = "Change-driven multi-artifact alignment for AI coding agents (deterministic core CLI)."
-readme = "README.md"
+readme = "README.zh-CN.md"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7",
@@ -29,7 +29,7 @@ packages = ["src/specripple"]
 [tool.hatch.build.targets.wheel.force-include]
 "pyproject.toml" = "specripple/_runtime_src/pyproject.toml"
 "uv.lock" = "specripple/_runtime_src/uv.lock"
-"README.md" = "specripple/_runtime_src/README.md"
+"README.zh-CN.md" = "specripple/_runtime_src/README.zh-CN.md"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

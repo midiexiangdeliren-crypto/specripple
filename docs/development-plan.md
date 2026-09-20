@@ -10,12 +10,13 @@
 - **安装与文档修复（09-20 复审后）**：init 重装对照上一份清单指纹——用户改过的受管文件保留并逐个报冲突，未改的才升级（新增重装保护/指纹升级/无清单未知内容三组测试）；init 随装完整 runtime（与 `build-skill` 共用 `runtime_file_plan` 装配计划，纯 init 安装无全局 CLI 也可运行，新增端到端测试）；旧技能迁移识别覆盖全部已发版本文（e49998a/6d996a4 变体注册表，原文经 `git show` 字节级提取）；修正参考文档行为错误（`index.json` 在项目根、`command` 检查器不看空 stdout）、README×2/migration 的 zip 解压路径、architecture 的 `uvx specripple` 表述，并按修正后说明真实安装验证一次（zip 顶层 `specripple/` → 复制 → run.py detect 0 findings）。
 - **wheel 普通安装随装 runtime（09-20）**：wheel 以 `specripple/_runtime_src/` 包数据强包含 runtime 构建输入（pyproject/uv.lock/README），init 装配回退链扩为"源码检出 → 已装技能自带 runtime → wheel 载荷"，普通 `pip/uv pip install` 后 init 同样产出可独立运行的 runtime。验收走真实分发路径并有回归钉住（`tests/test_distribution.py`：构建 wheel → 全新 venv 安装 → init 临时业务项目 → 安装后 `run.py` 成功/门禁失败/配置错误退出码 0/1/2）。
 - **v0.2.0 版本检查点（09-20）**：上述全部工作以单提交形成检查点（未推送）；新增 CHANGELOG.md，版本 0.1.1 → 0.2.0。
+- **README 单语化收尾（09-20）**：维护者删除英文 README 并精简中文 README（移除"不发布 PyPI"行）；配套修复分发链——pyproject `readme` 与 wheel force-include 改指 `README.zh-CN.md`，`REQUIRED_RUNTIME_FILES` 与 `tests/test_distribution.py`/`tests/test_skill_package.py` 同步改名，中文 README 去掉失效英文链接行；`uv build` 从 hatchling readme 缺失报错恢复，150 测试全绿（含真实分发 e2e），dist 技能包重建（zip 内 runtime README 随之更名）。
 
 ## 下一阶段（按优先级）
 
 ### 1. 收尾本轮（维护者动作）
 
-全量测试（150，含真实分发路径 e2e）、真实包构建、两个实测仓回归（code-run 7/7、codex-run 43/43，退出码真值 0）与新版单技能宿主回放（`manual-tests/skill-run/`：普通项目 → init 安装 → codex exec 首次接入 → 需求变更同步到门禁全绿，日志+README 可回放）均已完成；已按维护者指示形成 v0.2.0 版本检查点提交（未推送，推送与打标签由维护者执行）。
+全量测试（150，含真实分发路径 e2e）、真实包构建、两个实测仓回归（code-run 7/7、codex-run 43/43，退出码真值 0）与新版单技能宿主回放（`manual-tests/skill-run/`：普通项目 → init 安装 → codex exec 首次接入 → 需求变更同步到门禁全绿，日志+README 可回放）均已完成；v0.2.0 版本检查点提交（1dd3103）已按维护者指示推送至 main，标签仍为 v0.1.0/v0.1.1（打标签由维护者执行）。
 
 ### 2. 分发卫生（小工作量，先做）
 
