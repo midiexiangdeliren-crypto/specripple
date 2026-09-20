@@ -1,0 +1,11 @@
+# specripple acceptance configuration (project root).
+# fail_to_pass: must pass after the change (may fail before).
+# pass_to_pass: existing behavior that must stay green.
+# Checkers: file_exists, file_contains, file_not_contains, regex_match, command.
+fail_to_pass:
+  - checker: file_contains
+    file: artifacts/spec/REQ-001.md
+    text: "the changed requirement text"
+pass_to_pass:
+  - checker: command
+    command: python -m pytest tests/ -q

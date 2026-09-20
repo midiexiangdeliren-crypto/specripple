@@ -1,6 +1,6 @@
 [project]
 name = "specripple"
-version = "0.1.1"
+version = "0.2.0"
 description = "Change-driven multi-artifact alignment for AI coding agents (deterministic core CLI)."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,17 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/specripple"]
 
+# The host installer bundles the runtime from the installed package when no
+# source checkout is available, so the wheel must ship the runtime's build
+# inputs (see skillbuild.REQUIRED_RUNTIME_FILES) as package data.
+[tool.hatch.build.targets.wheel.force-include]
+"pyproject.toml" = "specripple/_runtime_src/pyproject.toml"
+"uv.lock" = "specripple/_runtime_src/uv.lock"
+"README.md" = "specripple/_runtime_src/README.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--basetemp=.pytest-tmp"
+markers = [
+    "slow: builds a wheel and a fresh venv end to end (deselect with -m 'not slow')",
+]

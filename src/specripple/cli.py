@@ -14,6 +14,7 @@ from .impact import compute_impact
 from .index_build import build_index, write_index
 from .init_host import run_init
 from .repo import load_entries
+from .skillbuild import build_package
 from .speckit_import import import_speckit
 from .verify import run_verify
 
@@ -214,3 +215,22 @@ def import_speckit_cmd(
         f"PLAN {counts.get('plan', 0)}, CON {counts.get('con', 0)})",
         fg=typer.colors.GREEN,
     )
+
+
+@app.command("build-skill")
+def build_skill_cmd(
+    out: Path = typer.Option(Path("dist"), "--out", help="Parent directory; the package is written to <out>/specripple."),
+    force: bool = typer.Option(False, "--force", help="Replace an existing non-empty output directory."),
+) -> None:
+    """Build the self-contained skill package (skill files + bundled runtime).
+
+    Source-checkout tooling: requires the repository sources on disk.
+    """
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    try:
+        result = build_package(repo_root, out, force=force)
+    except ValueError as exc:
+        _fail(str(exc))
+        return
+    typer.echo(f"built {result['package'].as_posix()} (v{result['version']}, {result['file_count']} files)")
+    typer.echo(f"zip: {result['zip'].as_posix()}")

@@ -75,6 +75,71 @@ def test_official_template_story_boundary_kept(tmp_path):
     assert "2. **Given**" not in entries["REQ-003"].body
 
 
+def test_level2_acceptance_heading_imports(tmp_path):
+    """`## Acceptance Scenarios` must stay inside the story, not fall into the overview."""
+    (tmp_path / "spec.md").write_text(
+        "# Feature: X\n\n"
+        "### User Story 1 - Email login (Priority: P1)\n\n"
+        "Login flow.\n\n"
+        "## Acceptance Scenarios\n\n"
+        "1. **Given** a registered user **When** login succeeds **Then** the dashboard loads\n",
+        encoding="utf-8",
+    )
+    import_speckit(tmp_path, tmp_path / "out")
+    entries = {e.id: e for e in load_entries(tmp_path / "out")}
+    assert entries["REQ-002"].status.value == "active"
+    assert "## Acceptance" in entries["REQ-002"].body
+    assert "Acceptance Scenarios" not in entries["REQ-002"].body
+    assert "1. **Given**" in entries["REQ-002"].body
+    assert "1. **Given**" not in entries["REQ-001"].body  # must not leak into the overview
+    assert detect(load_entries(tmp_path / "out"), tmp_path / "out") == []
+
+
+def test_level3_acceptance_heading_imports(tmp_path):
+    """`### Acceptance Scenarios` must stay inside the story, not fall into the overview."""
+    (tmp_path / "spec.md").write_text(
+        "# Feature: X\n\n"
+        "### User Story 1 - Email login (Priority: P1)\n\n"
+        "Login flow.\n\n"
+        "### Acceptance Scenarios\n\n"
+        "1. **Given** a registered user **When** login succeeds **Then** the dashboard loads\n",
+        encoding="utf-8",
+    )
+    import_speckit(tmp_path, tmp_path / "out")
+    entries = {e.id: e for e in load_entries(tmp_path / "out")}
+    assert "## Acceptance" in entries["REQ-002"].body
+    assert "Acceptance Scenarios" not in entries["REQ-002"].body
+    assert "1. **Given**" in entries["REQ-002"].body
+    assert "1. **Given**" not in entries["REQ-001"].body
+    assert detect(load_entries(tmp_path / "out"), tmp_path / "out") == []
+
+
+def test_acceptance_heading_does_not_absorb_next_story(tmp_path):
+    (tmp_path / "spec.md").write_text(
+        "# Feature: X\n\n"
+        "### User Story 1 - Email login (Priority: P1)\n\n"
+        "Login flow.\n\n"
+        "## Acceptance Scenarios\n\n"
+        "1. **Given** a user **When** login succeeds **Then** the dashboard loads\n\n"
+        "### User Story 2 - Session persistence (Priority: P2)\n\n"
+        "Sessions survive restarts.\n\n"
+        "**Acceptance Scenarios**:\n\n"
+        "2. **Given** a logged-in user **When** the server restarts **Then** the session persists\n",
+        encoding="utf-8",
+    )
+    result = import_speckit(tmp_path, tmp_path / "out")
+    assert result["counts"]["req"] == 3  # overview + both stories kept separate
+    entries = {e.id: e for e in load_entries(tmp_path / "out")}
+    first, second = entries["REQ-002"], entries["REQ-003"]
+    assert "## Acceptance" in first.body
+    assert "1. **Given**" in first.body
+    assert "2. **Given**" not in first.body  # story 2 was not absorbed
+    assert "Sessions survive restarts." in second.body
+    assert "2. **Given**" in second.body
+    assert "1. **Given**" not in second.body
+    assert detect(load_entries(tmp_path / "out"), tmp_path / "out") == []
+
+
 def test_imported_repository_is_detect_clean(tmp_path):
     import_speckit(FIXTURES, tmp_path)
     assert detect(load_entries(tmp_path), tmp_path) == []

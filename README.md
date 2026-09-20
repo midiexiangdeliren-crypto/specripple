@@ -2,93 +2,73 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Change-driven multi-artifact alignment for AI coding agents: modify a requirement, and every affected artifact (plan / spec / tasks / constitution) stays aligned.
+Change-driven multi-artifact alignment for AI coding agents: modify a requirement, and your agent lists the impact with evidence, propagates edits, resolves conflicts with you, and gates completion on executable acceptance — instead of claiming "done".
 
-This repository hosts the deterministic core CLI (zero-LLM) plus the host integration layer (`specripple init` ships a versioned AGENTS.md block and three agent skills; an MCP server is a planned phase-2 layer).
+One skill is the product. A deterministic zero-LLM CLI does the checking underneath.
 
 ## Status
 
-v0.1.1 — all commands implemented and tested (schema v0): index / impact / detect / verify / demo / init / import-speckit. Live-tested end to end on Codex CLI (non-interactive flow and interactive conflict resolution) and DeepSeek Harness (headless flow and MCP bridge); see "Verified hosts" below.
+v0.2.0 (2026-09-20): skill-first product — the former three skills are merged into a single `specripple` skill with a self-contained runtime (`scripts/run.py` — no CLI install needed), a content-fingerprinted installer with legacy-skill migration and bundled runtime on every install path (source checkout, skill package, wheel), and onboarding flows. See [docs/architecture.md](docs/architecture.md) and [CHANGELOG.md](CHANGELOG.md).
 
-## Quick start
-
-No install needed for a quick look — uv pulls straight from GitHub:
+## Quick start (60 seconds)
 
 ```bash
 uvx --from git+https://github.com/midiexiangdeliren-crypto/specripple specripple demo
 ```
 
-Or install once and call `specripple` directly:
+No PyPI release (maintainer decision) — uv pulls straight from GitHub.
+
+## Install into your project
+
+**Path A — skill package (recommended).** Get the self-contained package (`specripple build-skill --out dist` from a checkout, or the zip from GitHub releases), unzip it, and copy the top-level `specripple/` directory into your project's `.agents/skills/specripple/`. The skill's `run.py` builds its own cached runtime via uv on first use. Then hand `.agents/skills/specripple/references/onboarding.md` to your agent for first-touch setup (four paths: already configured / import Spec Kit / minimal entries for a plain project / acceptance config only).
+
+**Path B — CLI + installer.**
 
 ```bash
 uv tool install git+https://github.com/midiexiangdeliren-crypto/specripple
-specripple demo
+specripple init --host codex      # or --host claude, in your project root
 ```
 
-Or clone and run from source (`uv run specripple` only works inside this checkout; when pointing the installed or uvx CLI at another project, pass that project via `--root`):
+`init` copies the skill, writes a versioned marked block into AGENTS.md, and records every managed file with a sha256 fingerprint in `.agents/specripple-manifest.json`. Re-running `init` upgrades; `--remove` uninstalls; files you modified are never touched. Coming from v0.1.1's three-skill install? Re-running `init` migrates it: unmodified legacy skills are removed automatically, modified ones are kept and reported for you to reconcile. Details: [docs/migration.md](docs/migration.md).
 
-```bash
-uv sync
-uv run pytest -q
-uv run specripple demo
-```
+## How an alignment run goes
 
-Try the commands on the bundled mini project:
+You change a requirement and tell your agent "sync this". The skill drives: `specripple index` → `detect` (report mode) + `impact` (impacted candidates with evidence chains) → the agent edits affected artifacts and code (candidates must end in one of three states: modified / checked-no-change-needed / unconfirmed — unreachable in the graph is not "unaffected") → conflicts resolved one question at a time with rationale entries → gate `detect --fail-on HIGH` + `verify` (FAIL_TO_PASS / PASS_TO_PASS assertions, including a `command` checker that runs your real tests) → a report that distinguishes passed / failed / evidence-insufficient.
 
-```bash
-uv run specripple index --root tests/fixtures/mini
-uv run specripple impact REQ-001 --root tests/fixtures/mini
-uv run specripple impact REQ-001 --root tests/fixtures/mini --json
-```
+## The deterministic core
 
-## Artifact format (schema v0)
+- `specripple index` — parse `artifacts/**/*.md` (YAML frontmatter: id / type / status / depends_on / links), validate, rebuild `index.json`.
+- `specripple impact <ID>` — BFS closure over explicit links plus reverse `depends_on`, with evidence chains. The result is a candidate set, not a verdict.
+- `specripple detect` — zero-token rule layer D1–D6 (dangling refs, duplicate ids, state machine, structure, residue markers, glossary) with `--fail-on <level>` as a completion gate. Understands official Spec Kit markers (`**Acceptance Scenarios**:`, `[NEEDS CLARIFICATION: ...]`).
+- `specripple verify` — run `assertions.yaml` with file_exists / file_contains / file_not_contains / regex_match / command checkers; any failure exits nonzero. Strict config validation.
+- `specripple import-speckit <src>` — convert Spec Kit spec/plan/tasks/constitution into the entry repository (golden-snapshot tested; `##`/`###`/`####` acceptance headings and the bold label all normalized and kept inside their story).
+- `specripple build-skill` — build the self-contained skill package (bundled runtime, verified file manifest).
+- `specripple init` / `specripple demo` — host installation with migration, and an end-to-end demo with real code.
 
-Each artifact is one markdown file with YAML frontmatter:
-
-```markdown
----
-id: REQ-001
-type: req
-title: User login with email and password
-status: active
-depends_on: [REQ-000]
-links:
-  - to: TASK-001
-    kind: realized-by
-    src: manual
----
-
-## Acceptance
-
-- Given ..., when ..., then ...
-```
-
-`index.json` is a rebuildable derived artifact (gitignored); rebuild it with `specripple index`.
-
-## Commands
-
-- `specripple index` — parse `artifacts/**/*.md`, validate schema, write `index.json`.
-- `specripple impact <ID>` — BFS closure over outgoing links plus reverse `depends_on` edges; reports the impacted artifact set with evidence chains and unresolved references.
-- `specripple detect` — zero-token rule layer: dangling refs, duplicate ids, state-machine violations, structure violations, residue markers, glossary terms; CRITICAL/HIGH/MEDIUM/LOW report.
-- `specripple verify` — run `assertions.yaml` (fail_to_pass / pass_to_pass) with file_exists / file_contains / file_not_contains / regex_match / command checkers; nonzero exit on any failure. The `command` checker executes a shell command at the project root (exit 0 = pass, per-assertion `timeout`), pinning documented behavior to real executable tests.
-- `specripple demo` — copy the bundled demo project to a temp dir and run the full flow end to end.
-- `specripple init --host codex|claude [--remove] [--dry-run]` — install host integration: a versioned marked block in AGENTS.md plus the three skills in `.agents/skills/` (Claude Code additionally gets thin mirrors in `.claude/skills/` and a `/specripple` command). Idempotent and reversible.
-- `specripple import-speckit <src>` — convert Spec Kit artifacts (spec.md / plan.md / tasks.md / constitution.md) into the entry repository: user stories become REQ entries (P1=active), checkbox tasks become TASK entries wired to their story via `depends_on`, plan and constitution become PLAN/CON entries. Guarded by a golden-snapshot test.
-
-## Host integration
-
-`specripple init` writes only files it owns. The AGENTS.md block sits between `<!-- specripple:begin vX.Y.Z -->` and `<!-- specripple:end -->` markers and is replaced (never duplicated) on re-init. `--remove` strips the block and deletes managed skill files, but skips any file you have modified.
-
-Skills (single source in the package, copied on init):
-
-- `aligning-changes` — the main workflow: impact -> route (L0-L3) -> edit -> detect -> resolve -> verify, with evidence-before-declaration discipline.
-- `detecting-conflicts` — the six semantic checks (duplication, ambiguity, underspecification, constitution alignment, coverage gaps, inconsistency) that the rule layer cannot catch.
-- `resolving-conflicts` — one-question-at-a-time resolution protocol with options, recommendations, and rationale entries.
+Exit semantics everywhere: 0 ok / 1 checks failed / 2 config error.
 
 ## Verified hosts
 
-Live runs against a demo-derived project (change an entry, agent propagates autonomously, detect/verify green):
+- **Codex CLI** — live-tested end to end (autonomous propagation, interactive conflict resolution, and a run where requirements, code, and tests were updated in one dialogue turn with verify green).
+- **DeepSeek Harness** (dsh ≥ 0.1.5) — zero-adaptation compatible: `dsh-agent-instructions` reads AGENTS.md, `dsh-skill-filesystem` scans `.agents/skills`.
+- **Claude Code** — `init --host claude` generates `.claude/` thin shells and a `/specripple` command; live run deferred (maintainer decision).
+- **Copilot / Cursor** — nothing host-specific is generated; they read AGENTS.md and `.agents/skills/` natively. Not live-tested.
 
-- **Codex CLI** (`specripple init --host codex`): agent reads the skills unprompted, runs index/impact/edits/detect/verify itself, adds rationale entries for breaking changes per CON, and balances assertions.yaml. Both the autonomous flow and the interactive resolution protocol (one question, options, recommendation, RAT entry) behaved as designed. A later run with a code-backed project (the `command` checker pinning an executable acceptance script) had the agent update requirements, code, and tests in one dialogue turn while keeping verify green. Note: the workspace sandbox may block the bundled apply-patch helper; agents typically fall back to the sandbox-accessible copy under `~/.codex/.sandbox-bin/`.
-- **DeepSeek Harness** (dsh >= 0.1.5, headless profile): natively compatible with `specripple init` output with zero adaptation — `dsh-agent-instructions` reads AGENTS.md by default and `dsh-skill-filesystem` scans `<project>/.agents/skills`. MCP servers can be attached per profile via a `dsh-mcp-client` insert in the profile's `cordis.patch.yml` (stdio; on Windows wrap the command with `cmd /c`).
-- **Claude Code** (`specripple init --host claude`): installs thin skill mirrors in `.claude/skills/` and a `/specripple` command; live run deferred.
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md) — components, data flow, host compatibility facts
+- [docs/migration.md](docs/migration.md) — install, upgrade from old skills, Spec Kit import, uninstall
+- [docs/development-plan.md](docs/development-plan.md) — current state and next phases
+- [docs/roadmap.md](docs/roadmap.md) — priorities, the benefit-validation experiment, explicit non-goals
+- [docs/archive/pre-skill-product/](docs/archive/pre-skill-product/) — superseded planning documents (byte-identical archive)
+
+## Development
+
+```bash
+git clone https://github.com/midiexiangdeliren-crypto/specripple
+cd specripple
+uv sync
+uv run pytest -q
+```
+
+No telemetry, no network calls (dependency installation via uv excepted). License: see [docs/roadmap.md](docs/roadmap.md) (pending maintainer decision).

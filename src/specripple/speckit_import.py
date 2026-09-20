@@ -51,8 +51,10 @@ def _parse_spec(text: str) -> tuple[dict | None, list[dict]]:
             current = {"num": int(story_match.group(1)), "heading": story_match.group(2), "lines": []}
             stories.append(current)
             continue
-        if current is not None and _H123.match(line):
-            current = None  # a new H1-H3 heading ends the story region
+        if current is not None and not _ACCEPTANCE_HEADING.match(line) and _H123.match(line):
+            current = None  # a new H1-H3 heading ends the story region; an
+            # acceptance heading (##/###/####) documents the current story and
+            # must not end it (it is normalized to `## Acceptance` below)
         if current is not None:
             current["lines"].append(line)
         else:
@@ -117,8 +119,10 @@ def import_speckit(src: Path, root: Path) -> dict:
     """Convert Spec Kit artifacts under ``src`` into entries under ``root/artifacts``.
 
     Mapping: spec.md overview sections -> REQ overview entry; each
-    ``### User Story N`` -> REQ (P1=active, P2+=draft, ``#### Acceptance
-    Scenarios`` normalized to ``## Acceptance``); tasks.md checkboxes ->
+    ``### User Story N`` -> REQ (P1=active, P2+=draft; ``##``/``###``/``####``
+    ``Acceptance Scenarios`` headings and the official bold
+    ``**Acceptance Scenarios**:`` label are normalized to ``## Acceptance``
+    and stay inside their story); tasks.md checkboxes ->
     TASK (unchecked=draft, checked=done, ``depends_on`` = owning story's
     REQ); plan.md -> PLAN-001; constitution.md -> CON-001.
     """
